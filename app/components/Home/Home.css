@@ -1,0 +1,73 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&family=Pacifico&display=swap");
+
+.hero-txt {
+  font-family: "Pacifico", cursive;
+  font-size: 5.5rem;
+  text-align: center;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.9),
+    rgba(255, 255, 255, 0.6)
+  );
+  width: 50%;
+  height: 40%;
+  line-height: 1.2;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.focus-txt {
+  background: linear-gradient(to right, #ccccff, #ffccff, #ff99cc);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.sub-txt {
+    font-family: "Manrope", sans-serif;
+    font-size: 1rem;
+}
+
+.start-btn {
+    margin-top: 2rem;
+    border: 1.5px solid #ff99cc;
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    display: flex;
+    cursor: pointer;
+}
+
+.start-btn:hover {
+  background: linear-gradient(to right, #b3b3cc, #e6b3e6, #e68099);
+    color: white;
+    border: 1.5px solid #ffccff;
+}
+
+.start-btn span {
+    margin-left: 0.5rem;
+}
+
+.home-container {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.component-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.5s ease-in-out;
+}
+
+.slide-in {
+  transform: translateX1(0);
+}
+
+.slide-out {
+  transform: translateX(-100%);
+}
