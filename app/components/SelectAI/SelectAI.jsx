@@ -1,74 +1,63 @@
 "use client";
 import { HoverEffect } from "../ui/card-hover-effect";
-import { useState, useRef, useEffect, useContext } from "react";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import "./SelectAI.css";
 
 export function SelectAI({ onContinueClick }) {
   const [selectedOption, setSelectedOption] = useState(null);
-  const optionsRef = useRef(null);
-  const [isTransitioning, setIsTransitioning] = useState(false);
 
   const handleSelectionChange = (index) => {
     setSelectedOption(index !== null ? options[index] : null);
-    setIsTransitioning(true);
   };
 
-  useEffect(() => {
-    if (optionsRef.current) {
-      const targetTransform =
-        selectedOption !== null ? "translateY(-40px)" : "translateY(0)";
-      optionsRef.current.style.transform = isTransitioning
-        ? targetTransform
-        : "none";
-    }
-  }, [selectedOption, isTransitioning]);
-
-  useEffect(() => {
-    let timeoutId;
-    if (isTransitioning) {
-      timeoutId = setTimeout(() => {
-        setIsTransitioning(false);
-      }, 1000);
-    }
-    return () => clearTimeout(timeoutId);
-  }, [isTransitioning]);
-
   return (
-    <div className="outer-div">
+    <motion.div
+      className="outer-div"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
       <div className="inner-div">
-        <div className="options" ref={optionsRef}>
+        <div className="options">
           <HoverEffect
-            className={"selectoptions"}
+            className="selectoptions"
             items={options}
             onSelectionChange={handleSelectionChange}
           />
         </div>
-        {selectedOption !== null && (
-          <button
-            className={`start-btn ${selectedOption !== null ? "fade-in" : ""}`}
-            onClick={onContinueClick}
-          >
-            Continue
-            <span>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.5}
-                stroke="currentColor"
-                className="w-6 h-6"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="m8.25 4.5 7.5 7.5-7.5 7.5"
-                />
-              </svg>
-            </span>
-          </button>
-        )}
+        <AnimatePresence>
+          {selectedOption !== null && (
+            <motion.button
+              className="start-btn"
+              onClick={onContinueClick}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              transition={{ type: "spring", stiffness: 500, damping: 30 }}
+            >
+              Continue
+              <span>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className="w-6 h-6"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="m8.25 4.5 7.5 7.5-7.5 7.5"
+                  />
+                </svg>
+              </span>
+            </motion.button>
+          )}
+        </AnimatePresence>
       </div>
-    </div>
+    </motion.div>
   );
 }
 

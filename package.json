@@ -9,17 +9,23 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.13.0",
     "clsx": "^2.1.1",
-    "framer-motion": "^11.1.7",
+    "framer-motion": "^11.2.11",
+    "mammoth": "^1.8.0",
     "next": "14.2.3",
+    "pdf-lib": "^1.17.1",
+    "pdf-parse": "^1.1.1",
+    "puppeteer": "^22.12.0",
     "react": "^18",
     "react-dom": "^18",
     "react-element-to-jsx-string": "^15.0.0",
-    "react-horizontal-scrolling-menu": "^7.0.0",
-    "react-parallax-tilt": "^1.7.224",
-    "react-simple-typewriter": "^5.0.1",
+    "react-icons": "^5.2.1",
     "react-transition-group": "^4.4.5",
-    "tailwind-merge": "^2.3.0"
+    "sharp": "^0.33.4",
+    "tailwind-merge": "^2.3.0",
+    "uuid": "^10.0.0",
+    "pdf-img-convert": "^1.2.1"
   },
   "devDependencies": {
     "eslint": "^8",

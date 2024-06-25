@@ -6,19 +6,12 @@
   align-items: center;
 }
 
-.options {
+.selectoptions {
+  width: 100%;
+  height: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
-  transition: transform 5s ease-in;
-}
-
-.selectoptions {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
 }
 
 .start-btn {
@@ -32,13 +25,9 @@
 }
 
 .start-btn:hover {
-background: linear-gradient(to right, #b3b3cc, #e6b3e6, #e68099);
+  background: linear-gradient(to right, #b3b3cc, #e6b3e6, #e68099);
   color: white;
   border: 1.5px solid #ffccff;
-}
-
-.start-btn span {
-  margin-left: 0.5rem;
 }
 
 .inner-div {
@@ -47,17 +36,4 @@ background: linear-gradient(to right, #b3b3cc, #e6b3e6, #e68099);
   flex-direction: column;
   justify-content: center;
   align-items: center;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-.fade-in {
-  animation: fadeIn 1s ease-in-out forwards;
 }

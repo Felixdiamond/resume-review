@@ -1,0 +1,13 @@
+.w-96 {
+  width: 24rem;
+}
+
+.transition-all {
+  transition-property: all;
+}
+
+.fu-btn {
+  z-index: 50;
+  position: relative;
+  cursor: pointer;
+}
