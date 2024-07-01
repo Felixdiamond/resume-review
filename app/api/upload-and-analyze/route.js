@@ -8,9 +8,24 @@ import { NextResponse } from "next/server";
 import { model, fileToGenerativePart } from "@/lib/gemini";
 import { v4 as uuidv4 } from "uuid";
 import { storeAnalysis } from "../get-analysis/[id]/route";
-import { PDFDocument, rgb } from "pdf-lib";
-import sharp from "sharp";
-import { fromBuffer } from "pdf-img-convert";
+import * as pdfjsLib from 'pdfjs-dist';
+import { createCanvas } from 'canvas';
+import sharp from 'sharp';
+
+// Polyfill for Promise.withResolvers()
+if (typeof Promise.withResolvers !== 'function') {
+  Promise.withResolvers = function () {
+    let resolve, reject;
+    const promise = new Promise((res, rej) => {
+      resolve = res;
+      reject = rej;
+    });
+    return { promise, resolve, reject };
+  };
+}
+
+// Set up the worker source
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 export async function POST(request) {
   try {
@@ -76,22 +91,80 @@ export async function POST(request) {
 }
 
 async function convertPdfToImage(pdfBuffer) {
-  try {
-    // Convert PDF pages to images
-    const pngPages = await fromBuffer(pdfBuffer, {
-      scale: 2.0, // Increase resolution
-      combinedImage: true, // Combine all pages into a single image
+  // Load the PDF document
+  const pdf = await pdfjsLib.getDocument({ data: pdfBuffer }).promise;
+  
+  const scale = 2.0;
+  const pageImages = [];
+  let totalHeight = 0;
+  
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const viewport = page.getViewport({ scale });
+    
+    const canvasFactory = new pdfjsLib.DOMCanvasFactory();
+    const canvas = canvasFactory.create(viewport.width, viewport.height);
+    const renderContext = {
+      canvasContext: canvas.context,
+      viewport: viewport,
+    };
+    
+    await page.render(renderContext).promise;
+    
+    const image = await new Promise((resolve) => {
+      canvas.canvas.toBlob((blob) => {
+        resolve(blob);
+      }, 'image/png');
     });
-
-    // Save the combined image
-    const imagePath = path.join(os.tmpdir(), `combined_${Date.now()}.png`);
-    fs.writeFileSync(imagePath, pngPages[0]);
-
-    return imagePath;
-  } catch (error) {
-    console.error("Error converting PDF to image:", error);
-    throw error;
+    
+    pageImages.push(image);
+    totalHeight += viewport.height;
   }
+  
+  // Combine images using sharp
+  const combinedImage = await sharp({
+    create: {
+      width: viewport.width,
+      height: totalHeight,
+      channels: 4,
+      background: { r: 255, g: 255, b: 255, alpha: 1 }
+    }
+  })
+    .composite(pageImages.map((image, index) => ({
+      input: image,
+      top: index * (totalHeight / pageImages.length),
+      left: 0
+    })))
+    .png()
+    .toBuffer();
+
+  return combinedImage;
+}
+
+
+async function combineImages(images) {
+  // You'll need to implement this function to combine multiple images into one
+  // You can use a library like 'sharp' for this purpose
+  // Here's a placeholder implementation:
+  const sharp = require('sharp');
+
+  const combinedImage = await sharp({
+    create: {
+      width: 2480,
+      height: images.length * 3508,
+      channels: 4,
+      background: { r: 255, g: 255, b: 255, alpha: 1 }
+    }
+  })
+    .composite(images.map((image, index) => ({
+      input: image,
+      top: index * 3508,
+      left: 0
+    })))
+    .png()
+    .toBuffer();
+
+  return combinedImage;
 }
 
 async function convertDocToImage(docBuffer) {
