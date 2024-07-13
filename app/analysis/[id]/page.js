@@ -29,55 +29,81 @@ const AnalysisPage = () => {
 
   const formatContent = (content) => {
     const lines = content.split("\n");
-    let currentSection = null;
     const formattedContent = [];
-  
+
     lines.forEach((line, index) => {
       if (line.match(/^\d+\./)) {
-        currentSection = (
+        formattedContent.push(
           <div key={`section-${index}`} className={styles.section}>
             <h3 className={styles.sectionTitle}>{line}</h3>
           </div>
         );
-        formattedContent.push(currentSection);
       } else if (line.startsWith("- ")) {
-        if (!currentSection) {
-          currentSection = (
-            <div key={`section-${index}`} className={styles.section}>
-              <ul className={styles.bulletList}></ul>
-            </div>
-          );
-          formattedContent.push(currentSection);
-        } else {
-          const ul = currentSection.props.children.find(
-            (child) => child.type === "ul"
-          );
-          if (!ul) {
-            currentSection.props.children.push(
-              <ul key={`ul-${index}`} className={styles.bulletList}></ul>
+        const lastSection = formattedContent[formattedContent.length - 1];
+        if (lastSection && lastSection.props.className === styles.section) {
+          const children = React.Children.toArray(lastSection.props.children);
+          const ul = children.find((child) => child.type === "ul");
+          if (ul) {
+            const newUl = React.cloneElement(
+              ul,
+              {},
+              ...React.Children.toArray(ul.props.children),
+              <li key={`li-${index}`} className={styles.bulletItem}>
+                {line.substring(2)}
+              </li>
+            );
+            formattedContent[formattedContent.length - 1] = React.cloneElement(
+              lastSection,
+              {},
+              ...children.map((child) => (child.type === "ul" ? newUl : child))
+            );
+          } else {
+            formattedContent[formattedContent.length - 1] = React.cloneElement(
+              lastSection,
+              {},
+              ...children,
+              <ul key={`ul-${index}`} className={styles.bulletList}>
+                <li key={`li-${index}`} className={styles.bulletItem}>
+                  {line.substring(2)}
+                </li>
+              </ul>
             );
           }
-          ul.props.children.push(
-            <li key={`li-${index}`} className={styles.bulletItem}>
-              {line.substring(2)}
-            </li>
+        } else {
+          formattedContent.push(
+            <div key={`section-${index}`} className={styles.section}>
+              <ul className={styles.bulletList}>
+                <li key={`li-${index}`} className={styles.bulletItem}>
+                  {line.substring(2)}
+                </li>
+              </ul>
+            </div>
           );
         }
       } else if (line.trim() !== "") {
-        if (!currentSection) {
-          currentSection = (
-            <div key={`section-${index}`} className={styles.section}></div>
+        const lastSection = formattedContent[formattedContent.length - 1];
+        if (lastSection && lastSection.props.className === styles.section) {
+          const children = React.Children.toArray(lastSection.props.children);
+          formattedContent[formattedContent.length - 1] = React.cloneElement(
+            lastSection,
+            {},
+            ...children,
+            <p key={`p-${index}`} className={styles.paragraph}>
+              {line}
+            </p>
           );
-          formattedContent.push(currentSection);
+        } else {
+          formattedContent.push(
+            <div key={`section-${index}`} className={styles.section}>
+              <p key={`p-${index}`} className={styles.paragraph}>
+                {line}
+              </p>
+            </div>
+          );
         }
-        currentSection?.props?.children?.push(
-          <p key={`p-${index}`} className={styles.paragraph}>
-            {line}
-          </p>
-        );
       }
     });
-  
+
     return formattedContent;
   };
 
