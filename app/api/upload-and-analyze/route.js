@@ -3,6 +3,9 @@ import { v4 as uuidv4 } from "uuid";
 import { storeAnalysis } from "@/lib/kv-client";
 import { generateContent } from "../../../lib/antrophic.mjs";
 
+export const maxDuration = 60; // This function can run for a maximum of 60 seconds
+export const dynamic = "force-dynamic";
+
 export async function POST(request) {
   try {
     const data = await request.formData();
@@ -19,7 +22,7 @@ export async function POST(request) {
 
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    console.log('generating content')
+    console.log("generating content");
     const analysis = await generateContent(mode, buffer);
 
     // Generate a unique ID and store the analysis
