@@ -1,8 +1,9 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useContext, useState, useEffect, useRef } from "react";
 import { AppContext } from "@/context/AppContext";
 import { UploadComponent } from "../UploadComponent/UploadComponent";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2 } from "lucide-react";
+import "./Upload.css";
 
 export const UploadPage = () => {
   const { selectedOption } = useContext(AppContext);
@@ -73,8 +74,8 @@ export const UploadPage = () => {
   }, [currentVerseIndex, currentCharIndex, verses, isTypingPaused]);
 
   return (
-    <div className="min-h-screen bg-gray-900 bg-transparent text-white flex items-center justify-center p-4">
-      <div className="max-w-2xl w-full bg-white/20 backdrop-blur-lg rounded-lg shadow-xl p-6 md:p-8 space-y-6">
+    <div className="min-h-screen bg-transparent text-white flex items-center justify-center p-4 overflow-y-auto outer-div">
+      <div className="max-w-2xl w-full bg-white/20 backdrop-blur-lg rounded-lg shadow-xl p-6 md:p-8 space-y-6 overflow-y-auto">
         <div className="space-y-4">
           {typedText.map((text, index) => (
             <motion.p
