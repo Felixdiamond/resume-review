@@ -1,52 +1,61 @@
-"use client";
+import React, { useState, useContext } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { AppContext } from "@/context/AppContext";
 import { cn } from "@/lib/utils/cn";
-import { AnimatePresence, motion } from "framer-motion";
-import { useState, useEffect, useContext } from "react";
 
-export const HoverEffect = ({ items, className, onSelectionChange }) => {
+export const HoverEffect = ({
+  items,
+  className,
+  onSelectionChange,
+  isMobile,
+}) => {
+  const [hoveredIndex, setHoveredIndex] = useState(null);
   const [selectedIndex, setSelectedIndex] = useState(null);
-  const maxTitleLength = Math.max(...items.map((item) => item.title.length));
   const { handleOptionSelect } = useContext(AppContext);
 
   const handleMouseEnter = (idx) => {
+    setHoveredIndex(idx);
+  };
+
+  const handleMouseLeave = () => {
+    setHoveredIndex(null);
+  };
+
+  const handleClick = (idx) => {
     setSelectedIndex(idx);
     handleOptionSelect(idx);
     onSelectionChange(idx);
   };
 
-  const handleMouseLeave = (idx) => {
-    if (selectedIndex !== idx) {
-      setSelectedIndex(null);
-      onSelectionChange(null);
-    }
-  };
-
-  // useEffect(() => {
-  //   console.log("Current selevtion: ", selectedIndex);
-  // }, [selectedIndex]);
+  const containerClassName = cn(
+    "grid gap-4 py-10",
+    isMobile ? "grid-cols-1" : "grid-cols-2",
+    className
+  );
 
   return (
-    <div
-      className={cn(
-        "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 py-10",
-        className
-      )}
-    >
+    <div className={containerClassName}>
       {items.map((item, idx) => (
-        <div
+        <motion.div
           key={idx}
-          className="relative group block p-2 h-full"
+          className="relative group block p-2 h-full w-full"
           onMouseEnter={() => handleMouseEnter(idx)}
-          onMouseLeave={() => handleMouseLeave(idx)}
+          onMouseLeave={handleMouseLeave}
+          onClick={() => handleClick(idx)}
+          tabIndex={0}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
         >
           <AnimatePresence>
-            { selectedIndex !== null && (selectedIndex === idx || selectedIndex === null) && (
+            {(hoveredIndex === idx || selectedIndex === idx) && (
               <motion.span
-                className="absolute inset-0 h-full w-full bg-neutral-200 dark:bg-white/[0.1] block rounded-3xl"
+                className="absolute inset-0 h-full w-full bg-white/[0.15] dark:bg-white/[0.25] block rounded-3xl"
                 layoutId="hoverBackground"
                 initial={{ opacity: 0 }}
-                animate={{ opacity: 1, transition: { duration: 0.15 } }}
+                animate={{
+                  opacity: 1,
+                  transition: { duration: 0.15 },
+                }}
                 exit={{
                   opacity: 0,
                   transition: { duration: 0.15, delay: 0.2 },
@@ -54,24 +63,27 @@ export const HoverEffect = ({ items, className, onSelectionChange }) => {
               />
             )}
           </AnimatePresence>
-          <Card maxWidth={maxTitleLength}>
+          <Card isSelected={selectedIndex === idx}>
+            <CardIcon>{item.icon}</CardIcon>
             <CardTitle>{item.title}</CardTitle>
             <CardDescription>{item.description}</CardDescription>
           </Card>
-        </div>
+        </motion.div>
       ))}
     </div>
   );
 };
 
-export const Card = ({ className, children, maxWidth }) => {
+const Card = ({ className, children, isSelected }) => {
   return (
     <div
       className={cn(
-        "rounded-2xl h-full p-4 overflow-hidden bg-white/[0.2] backdrop-blur-sm border border-white/[0.3] shadow-lg relative z-20",
+        "rounded-2xl h-full w-full p-6 overflow-hidden backdrop-blur-md border shadow-lg relative z-20 transition-all duration-300",
+        isSelected
+          ? "bg-white/[0.25] border-white/[0.5]"
+          : "bg-white/[0.15] border-white/[0.2]",
         className
       )}
-      style={{ width: `${maxWidth * 4}ch` }}
     >
       <div className="relative z-50">
         <div className="p-4">{children}</div>
@@ -80,19 +92,28 @@ export const Card = ({ className, children, maxWidth }) => {
   );
 };
 
-export const CardTitle = ({ className, children }) => {
+const CardIcon = ({ children }) => {
+  return <div className="text-4xl mb-4">{children}</div>;
+};
+
+const CardTitle = ({ className, children }) => {
   return (
-    <h4 className={cn("text-zinc-100 font-bold tracking-wide mt-4", className)}>
+    <h4
+      className={cn(
+        "text-zinc-100 font-bold text-xl tracking-wide mt-2",
+        className
+      )}
+    >
       {children}
     </h4>
   );
 };
 
-export const CardDescription = ({ className, children }) => {
+const CardDescription = ({ className, children }) => {
   return (
     <p
       className={cn(
-        "mt-8 text-zinc-400 tracking-wide leading-relaxed text-sm",
+        "mt-4 text-zinc-300 tracking-wide leading-relaxed text-sm",
         className
       )}
     >
@@ -100,3 +121,5 @@ export const CardDescription = ({ className, children }) => {
     </p>
   );
 };
+
+export { Card, CardIcon, CardTitle, CardDescription };

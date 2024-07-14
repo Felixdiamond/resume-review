@@ -1,11 +1,10 @@
-"use client";
-import { useContext, useState, useEffect } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { AppContext } from "@/context/AppContext";
 import { UploadComponent } from "../UploadComponent/UploadComponent";
 import { motion, AnimatePresence } from "framer-motion";
-import "./Upload.css";
+import { Loader2 } from "lucide-react";
 
-export function UploadPage() {
+export const UploadPage = () => {
   const { selectedOption } = useContext(AppContext);
   const [verses, setVerses] = useState([]);
   const [typedText, setTypedText] = useState([]);
@@ -15,25 +14,31 @@ export function UploadPage() {
   const [isTypingComplete, setIsTypingComplete] = useState(false);
 
   useEffect(() => {
-    if (selectedOption === 0) {
-      setVerses([
-        "Bankai",
-      ]);
-    } else {
-      setVerses([
-        "Daiguren Hyorinmaru",
-      ]);
-    }
+    setVerses(
+      selectedOption === 0
+        ? [
+            "Hey there! I'm your AI Career Coach, ready to provide honest feedback on your resume.",
+            "Don't worry, your information is confidential.",
+            "Share your resume, and together we'll make it stand out in the job market.",
+          ]
+        : [
+            "Well, well, well. look who decided to share their resume.",
+            "Brace yourself, this might hurt.",
+            "I've seen better resumes written by kindergarteners.",
+            "But hey, at least you have a sense of humor for choosing the 'jerk mode'.",
+            "Let's see how much of a trainwreck your professional life is.",
+          ]
+    );
     setTypedText([]);
     setCurrentVerseIndex(0);
     setCurrentCharIndex(0);
+    setIsTypingComplete(false);
   }, [selectedOption]);
 
   useEffect(() => {
     if (currentVerseIndex < verses.length && !isTypingPaused) {
       const currentVerse = verses[currentVerseIndex];
       const currentChar = currentVerse[currentCharIndex];
-
       const timeoutId = setTimeout(() => {
         if (currentCharIndex < currentVerse.length) {
           setTypedText((prev) => {
@@ -45,8 +50,6 @@ export function UploadPage() {
             return newTypedText;
           });
           setCurrentCharIndex((prev) => prev + 1);
-
-          // Pause after punctuation
           if ([",", ".", "!", "?"].includes(currentChar)) {
             setIsTypingPaused(true);
             setTimeout(
@@ -56,43 +59,57 @@ export function UploadPage() {
           }
         } else {
           if (currentVerseIndex === verses.length - 1) {
-            // If this is the last verse and we've finished typing it
             setIsTypingComplete(true);
           } else {
             setCurrentVerseIndex((prev) => prev + 1);
             setCurrentCharIndex(0);
             setIsTypingPaused(true);
-            setTimeout(() => setIsTypingPaused(false), 1000); // Pause between verses
+            setTimeout(() => setIsTypingPaused(false), 1000);
           }
         }
-      }, Math.random() * 30 + 50); // Random typing speed for more natural effect
-
+      }, Math.random() * 30 + 50);
       return () => clearTimeout(timeoutId);
     }
   }, [currentVerseIndex, currentCharIndex, verses, isTypingPaused]);
 
   return (
-    <div className="outer-div flex items-center justify-center flex-col">
-      <div className="max-w-2xl w-full bg-opacity-50 rounded-lg p-8">
-        <div className="typewriter-container mb-8">
+    <div className="min-h-screen bg-gray-900 bg-transparent text-white flex items-center justify-center p-4">
+      <div className="max-w-2xl w-full bg-white/20 backdrop-blur-lg rounded-lg shadow-xl p-6 md:p-8 space-y-6">
+        <div className="space-y-4">
           {typedText.map((text, index) => (
-            <p key={index} className="verse text-white text-lg mb-4">
+            <motion.p
+              key={index}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="text-lg md:text-xl leading-relaxed"
+            >
               {text}
-            </p>
+            </motion.p>
           ))}
         </div>
         <AnimatePresence>
-          {isTypingComplete && (
+          {isTypingComplete ? (
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
             >
               <UploadComponent />
+            </motion.div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex justify-center"
+            >
+              <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
             </motion.div>
           )}
         </AnimatePresence>
       </div>
     </div>
   );
-}
+};
+
+export default UploadPage;
