@@ -1,0 +1,7 @@
+{
+    "functions": {
+      "api/upload-and-analyze.js": {
+        "maxDuration": 120
+      }
+    }
+  }
