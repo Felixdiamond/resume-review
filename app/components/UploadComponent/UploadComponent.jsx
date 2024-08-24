@@ -2,14 +2,18 @@ import { useState, useContext } from "react";
 import { AppContext } from "@/context/AppContext";
 import "./UploadComponent.css";
 import { useRouter } from "next/navigation";
+import * as PDFJS from 'pdfjs-dist/build/pdf';
+import PDFJSWorker from 'pdfjs-dist/build/pdf.worker.min.mjs';
+import mammoth from 'mammoth';
+import { useToast } from "../ui/use-toast";
 
 export const UploadComponent = () => {
   const [file, setFile] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [analysis, setAnalysis] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const { selectedOption } = useContext(AppContext);
   const router = useRouter();
+  const { toast } = useToast();
 
   const handleFileChange = (event) => {
     const selectedFile = event.target.files[0];
@@ -40,6 +44,76 @@ export const UploadComponent = () => {
     handleFile(droppedFile);
   };
 
+  const convertToImage = async (file) => {
+    console.log("converting to image")
+    if (file.type === 'application/pdf') {
+      return await convertPdfToImage(file);
+    } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || file.type === 'application/msword') {
+      return await convertDocToImage(file);
+    } else {
+      throw new Error('Unsupported file type');
+    }
+  };
+
+  const convertPdfToImage = async (file) => {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await PDFJS.getDocument({ data: arrayBuffer }).promise;
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const scale = 1.5;
+    
+    let totalHeight = 0;
+    const pageImages = [];
+
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const viewport = page.getViewport({ scale });
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+      await page.render({ canvasContext: ctx, viewport }).promise;
+      pageImages.push(canvas.toDataURL('image/png'));
+      totalHeight += viewport.height;
+    }
+
+    // Combine all pages into a single image
+    const combinedCanvas = document.createElement('canvas');
+    combinedCanvas.width = canvas.width;
+    combinedCanvas.height = totalHeight;
+    const combinedCtx = combinedCanvas.getContext('2d');
+
+    let yOffset = 0;
+    for (const pageImage of pageImages) {
+      const img = new Image();
+      img.src = pageImage;
+      await new Promise(resolve => {
+        img.onload = () => {
+          combinedCtx.drawImage(img, 0, yOffset);
+          yOffset += img.height;
+          resolve();
+        };
+      });
+    }
+
+    return combinedCanvas.toDataURL('image/png');
+  };
+
+  const convertDocToImage = async (file) => {
+    const arrayBuffer = await file.arrayBuffer();
+    const result = await mammoth.convertToHtml({ arrayBuffer });
+    const htmlString = result.value;
+    
+    const container = document.createElement('div');
+    container.innerHTML = htmlString;
+    document.body.appendChild(container);
+    const canvas = await html2canvas(container, {
+      scrollY: -window.scrollY,
+      windowHeight: document.documentElement.offsetHeight
+    });
+    document.body.removeChild(container);
+    
+    return canvas.toDataURL('image/png');
+  };
+
   const handleSubmit = async () => {
     if (!file) {
       alert("Please select a file first.");
@@ -47,14 +121,24 @@ export const UploadComponent = () => {
     }
 
     setIsLoading(true);
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("mode", selectedOption === 0 ? "balanced" : "jerk");
-
+    toast({
+      title: "Processing...",
+      description: "Please wait while we analyze your resume.",
+    })
     try {
+      const imageData = await convertToImage(file);
+      console.log("image conversion complete")
+      
       const response = await fetch("/api/upload-and-analyze", {
         method: "POST",
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          image: imageData,
+          mode: selectedOption === 0 ? "balanced" : "jerk",
+          fileName: file.name,
+        }),
       });
 
       if (!response.ok) {

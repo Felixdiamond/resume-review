@@ -3,27 +3,26 @@ import { v4 as uuidv4 } from "uuid";
 import { storeAnalysis } from "@/lib/kv-client";
 import { generateContent } from "../../../lib/antrophic.mjs";
 
-export const maxDuration = 60; // This function can run for a maximum of 60 seconds
+export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
 export async function POST(request) {
   try {
-    const data = await request.formData();
-    const file = data.get("file");
-    const mode = data.get("mode");
+    const { image, mode, fileName } = await request.json();
 
-    if (!file) {
-      return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
+    if (!image) {
+      return NextResponse.json({ error: "No image data provided" }, { status: 400 });
     }
 
     if (mode !== "balanced" && mode !== "jerk") {
       return NextResponse.json({ error: "Invalid mode" }, { status: 400 });
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
+    // Convert base64 image data to buffer
+    const buffer = Buffer.from(image.split(',')[1], 'base64');
 
     console.log("generating content");
-    const analysis = await generateContent(mode, buffer);
+    const analysis = await generateContent(mode, buffer, "image/png", fileName);
 
     // Generate a unique ID and store the analysis
     const id = uuidv4();

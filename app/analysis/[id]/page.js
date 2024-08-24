@@ -2,13 +2,46 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
+import { Download } from "lucide-react";
 import styles from "./AnalysisPage.module.css";
+import { Button } from "@/app/components/ui/button";
 
 const AnalysisPage = () => {
   const [analysis, setAnalysis] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [downloading, setDownloading] = useState(false);
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== "undefined" && window.innerWidth < 640
+  );
   const { id } = useParams();
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const handleResize = () => {
+        setIsMobile(window.innerWidth < 640);
+      };
+      window.addEventListener("resize", handleResize);
+      return () => window.removeEventListener("resize", handleResize);
+    }
+  }, []);
+
+  const handleDownload = async () => {
+    setDownloading(true);
+    try {
+      const element = document.createElement("a");
+      const file = new Blob([analysis], { type: 'text/plain' });
+      element.href = URL.createObjectURL(file);
+      element.download = "resume_analysis.txt";
+      document.body.appendChild(element);
+      element.click();
+      document.body.removeChild(element);
+    } catch (error) {
+      console.error("Error downloading analysis:", error);
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   useEffect(() => {
     async function fetchAnalysis() {
@@ -108,7 +141,7 @@ const AnalysisPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8 relative">
       <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-md overflow-hidden">
         <div className="p-8">
           <h1 className="text-3xl font-bold text-center text-gray-900 mb-8">
@@ -128,6 +161,24 @@ const AnalysisPage = () => {
           )}
         </div>
       </div>
+      {!loading && !error && (
+        <Button
+        onClick={handleDownload}
+        className={`fixed bottom-4 right-4 ${
+          isMobile ? "p-2" : "px-4 py-2"
+        } bg-gray-900 text-white rounded-full shadow-lg hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 transition-colors duration-200`}
+        disabled={loading || downloading}
+      >
+        {downloading ? (
+          <div className="spinner h-5 w-5" />
+        ) : (
+          <>
+            <Download className={`h-5 w-5 ${isMobile ? "" : "mr-2"}`} />
+            {!isMobile && "Download Analysis"}
+          </>
+        )}
+      </Button>
+      )}
     </div>
   );
 };

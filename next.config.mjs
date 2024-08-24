@@ -1,3 +1,4 @@
+import './lib/polyfills.mjs';
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     experimental: {

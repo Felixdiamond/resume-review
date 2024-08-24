@@ -1,9 +1,5 @@
 .outer-div {
   height: 100vh;
-  overflow-y: visible;
+  overflow-y: hidden;
   box-sizing: border-box;
-  /* for phones */
-  @media (max-width: 768px) {
-    padding-top: 5rem;
-  }
 }
