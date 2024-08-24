@@ -3,7 +3,6 @@ import { AppContext } from "@/context/AppContext";
 import "./UploadComponent.css";
 import { useRouter } from "next/navigation";
 import * as PDFJS from 'pdfjs-dist/build/pdf';
-import PDFJSWorker from 'pdfjs-dist/build/pdf.worker.min.mjs';
 import mammoth from 'mammoth';
 import { useToast } from "../ui/use-toast";
 import html2canvas from "html2canvas";
@@ -130,7 +129,7 @@ export const UploadComponent = () => {
     setIsLoading(true);
     toast({
       title: "Processing...",
-      description: "Please wait while we analyze your resume.",
+      description: "Please wait while we analyze your resume. This may take a few moments.",
     })
     try {
       const imageData = await convertToImage(file);
