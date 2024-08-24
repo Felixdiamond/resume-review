@@ -6,6 +6,7 @@ import * as PDFJS from 'pdfjs-dist/build/pdf';
 import PDFJSWorker from 'pdfjs-dist/build/pdf.worker.min.mjs';
 import mammoth from 'mammoth';
 import { useToast } from "../ui/use-toast";
+import html2canvas from "html2canvas";
 
 export const UploadComponent = () => {
   const [file, setFile] = useState(null);
@@ -98,19 +99,25 @@ export const UploadComponent = () => {
   };
 
   const convertDocToImage = async (file) => {
+    console.log("converting doc to image")
     const arrayBuffer = await file.arrayBuffer();
+    console.log("converting to html")
     const result = await mammoth.convertToHtml({ arrayBuffer });
     const htmlString = result.value;
     
+    console.log("creating div element")
     const container = document.createElement('div');
     container.innerHTML = htmlString;
+    console.log("appending to body")
     document.body.appendChild(container);
+    console.log("creating canvas")
     const canvas = await html2canvas(container, {
       scrollY: -window.scrollY,
       windowHeight: document.documentElement.offsetHeight
     });
     document.body.removeChild(container);
     
+    console.log("returning image data")
     return canvas.toDataURL('image/png');
   };
 
