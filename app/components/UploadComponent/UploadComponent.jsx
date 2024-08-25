@@ -7,10 +7,7 @@ import mammoth from 'mammoth';
 import { useToast } from "../ui/use-toast";
 import html2canvas from "html2canvas";
 
-PDFJS.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url,
-).toString();
+PDFJS.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${PDFJS.version}/build/pdf.worker.min.mjs`;
 
 export const UploadComponent = () => {
   const [file, setFile] = useState(null);
