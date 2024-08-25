@@ -1,14 +1,16 @@
-import { useState, useContext, useEffect } from "react";
+import { useState, useContext } from "react";
 import { AppContext } from "@/context/AppContext";
 import "./UploadComponent.css";
 import { useRouter } from "next/navigation";
+import * as PDFJS from 'pdfjs-dist/build/pdf';
 import mammoth from 'mammoth';
 import { useToast } from "../ui/use-toast";
 import html2canvas from "html2canvas";
 
-// Import PDF.js dynamically
-import dynamic from 'next/dynamic';
-const PDFJSWrapper = dynamic(() => import('./PDFJSWrapper'), { ssr: false });
+PDFJS.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url,
+).toString();
 
 export const UploadComponent = () => {
   const [file, setFile] = useState(null);
@@ -27,11 +29,7 @@ export const UploadComponent = () => {
     if (selectedFile && selectedFile.size <= 10 * 1024 * 1024) {
       setFile(selectedFile);
     } else {
-      toast({
-        title: "File too large",
-        description: "Please select a file up to 10MB in size.",
-        variant: "destructive",
-      });
+      alert("Please select a file up to 10MB in size.");
     }
   };
 
@@ -52,8 +50,9 @@ export const UploadComponent = () => {
   };
 
   const convertToImage = async (file) => {
+    console.log("converting to image")
     if (file.type === 'application/pdf') {
-      return await PDFJSWrapper.convertPdfToImage(file);
+      return await convertPdfToImage(file);
     } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || file.type === 'application/msword') {
       return await convertDocToImage(file);
     } else {
@@ -61,30 +60,74 @@ export const UploadComponent = () => {
     }
   };
 
-  const convertDocToImage = async (file) => {
+  const convertPdfToImage = async (file) => {
     const arrayBuffer = await file.arrayBuffer();
+    const pdf = await PDFJS.getDocument({ data: arrayBuffer }).promise;
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const scale = 1.5;
+    
+    let totalHeight = 0;
+    const pageImages = [];
+
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const viewport = page.getViewport({ scale });
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+      await page.render({ canvasContext: ctx, viewport }).promise;
+      pageImages.push(canvas.toDataURL('image/png'));
+      totalHeight += viewport.height;
+    }
+
+    // Combine all pages into a single image
+    const combinedCanvas = document.createElement('canvas');
+    combinedCanvas.width = canvas.width;
+    combinedCanvas.height = totalHeight;
+    const combinedCtx = combinedCanvas.getContext('2d');
+
+    let yOffset = 0;
+    for (const pageImage of pageImages) {
+      const img = new Image();
+      img.src = pageImage;
+      await new Promise(resolve => {
+        img.onload = () => {
+          combinedCtx.drawImage(img, 0, yOffset);
+          yOffset += img.height;
+          resolve();
+        };
+      });
+    }
+
+    return combinedCanvas.toDataURL('image/png');
+  };
+
+  const convertDocToImage = async (file) => {
+    console.log("converting doc to image")
+    const arrayBuffer = await file.arrayBuffer();
+    console.log("converting to html")
     const result = await mammoth.convertToHtml({ arrayBuffer });
     const htmlString = result.value;
     
+    console.log("creating div element")
     const container = document.createElement('div');
     container.innerHTML = htmlString;
+    console.log("appending to body")
     document.body.appendChild(container);
+    console.log("creating canvas")
     const canvas = await html2canvas(container, {
       scrollY: -window.scrollY,
       windowHeight: document.documentElement.offsetHeight
     });
     document.body.removeChild(container);
     
+    console.log("returning image data")
     return canvas.toDataURL('image/png');
   };
 
   const handleSubmit = async () => {
     if (!file) {
-      toast({
-        title: "No file selected",
-        description: "Please select a file first.",
-        variant: "destructive",
-      });
+      alert("Please select a file first.");
       return;
     }
 
@@ -92,10 +135,10 @@ export const UploadComponent = () => {
     toast({
       title: "Processing...",
       description: "Please wait while we analyze your resume. This may take a few moments.",
-    });
-
+    })
     try {
       const imageData = await convertToImage(file);
+      console.log("image conversion complete")
       
       const response = await fetch("/api/upload-and-analyze", {
         method: "POST",
@@ -117,11 +160,7 @@ export const UploadComponent = () => {
       router.push(`/analysis/${result.id}`);
     } catch (error) {
       console.error("Error:", error);
-      toast({
-        title: "Error",
-        description: "An error occurred while processing the file.",
-        variant: "destructive",
-      });
+      alert("An error occurred while processing the file.");
     } finally {
       setIsLoading(false);
     }
